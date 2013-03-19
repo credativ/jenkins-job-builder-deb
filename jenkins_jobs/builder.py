@@ -26,6 +26,7 @@ import pkg_resources
 import logging
 import copy
 import itertools
+from jenkins_jobs.errors import JenkinsJobsException
 
 logger = logging.getLogger(__name__)
 
@@ -63,6 +64,15 @@ class YamlParser(object):
         for item in data:
             cls, dfn = item.items()[0]
             group = self.data.get(cls, {})
+            if len(item.items()) > 1:
+                n = None
+                for k, v in item.items():
+                    if k == "name":
+                        n = v
+                        break
+                # Syntax error
+                raise JenkinsJobsException("Syntax error, for item named "
+                                           "'{0}'. Missing indent?".format(n))
             name = dfn['name']
             group[name] = dfn
             self.data[cls] = group
@@ -227,6 +237,7 @@ class CacheStorage(object):
             self.data = {}
             return
         self.data = yaml.load(yfile)
+        logger.debug("Using cache: '{0}'".format(self.cachefilename))
         yfile.close()
 
     @staticmethod
@@ -302,7 +313,7 @@ class Builder(object):
         for job in jobs:
             self.delete_job(job['name'])
 
-    def update_job(self, fn, name=None, output_dir=None):
+    def update_job(self, fn, names=None, output_dir=None):
         if os.path.isdir(fn):
             files_to_process = [os.path.join(fn, f)
                                 for f in os.listdir(fn)
@@ -316,11 +327,12 @@ class Builder(object):
         parser.generateXML()
 
         parser.jobs.sort(lambda a, b: cmp(a.name, b.name))
+
         for job in parser.jobs:
-            if name and job.name != name:
+            if names and job.name not in names:
                 continue
             if output_dir:
-                if name:
+                if names:
                     print job.output()
                     continue
                 fn = os.path.join(output_dir, job.name)
@@ -338,3 +350,5 @@ class Builder(object):
             if self.cache.has_changed(job.name, md5):
                 self.jenkins.update_job(job.name, job.output())
                 self.cache.set(job.name, md5)
+            else:
+                logger.debug("'{0}' has not changed".format(job.name))

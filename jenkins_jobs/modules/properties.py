@@ -126,16 +126,18 @@ def inject(parser, xml_parent, data):
     inject = XML.SubElement(xml_parent,
                             'EnvInjectJobProperty')
     info = XML.SubElement(inject, 'info')
-    XML.SubElement(info, 'propertiesFilePath').text = str(
-        data.get('properties-file', ''))
-    XML.SubElement(info, 'propertiesContent').text = str(
-        data.get('properties-content', ''))
-    XML.SubElement(info, 'scriptFilePath').text = str(
-        data.get('script-file', ''))
-    XML.SubElement(info, 'scriptContent').text = str(
-        data.get('script-content', ''))
-    XML.SubElement(info, 'groovyScriptContent').text = str(
-        data.get('groovy-content', ''))
+
+    jenkins_jobs.modules.base.add_nonblank_xml_subelement(
+        info, 'propertiesFilePath', data.get('properties-file'))
+    jenkins_jobs.modules.base.add_nonblank_xml_subelement(
+        info, 'propertiesContent', data.get('properties-content'))
+    jenkins_jobs.modules.base.add_nonblank_xml_subelement(
+        info, 'scriptFilePath', data.get('script-file'))
+    jenkins_jobs.modules.base.add_nonblank_xml_subelement(
+        info, 'scriptContent', data.get('script-content'))
+    jenkins_jobs.modules.base.add_nonblank_xml_subelement(
+        info, 'groovyScriptContent', data.get('groovy-content'))
+
     XML.SubElement(info, 'loadFilesFromMaster').text = str(
         data.get('load-from-master', 'false')).lower()
     XML.SubElement(inject, 'on').text = str(
@@ -223,6 +225,81 @@ def authorization(parser, xml_parent, data):
             for perm in perms:
                 pe = XML.SubElement(matrix, 'permission')
                 pe.text = "{0}:{1}".format(mapping[perm], username)
+
+
+def extended_choice(parser, xml_parent, data):
+    """yaml: extended-choice
+    Creates an extended choice property where values can be read from a file
+    Requires the Jenkins `Extended Choice Parameter Plugin.
+    <https://wiki.jenkins-ci.org/display/JENKINS/
+    Extended+Choice+Parameter+plugin>`_
+
+    :arg string name: name of the property
+    :arg string description: description of the property (optional, default '')
+    :arg string property-file: location of property file to read from
+        (optional, default '')
+    :arg string property-key: key for the property-file (optional, default '')
+    :arg bool quote-value: whether to put quotes around the property
+        when passing to Jenkins (optional, default false)
+    :arg string visible-items: number of items to show in the list
+        (optional, default 5)
+    :arg string type: type of select (optional, default single-select)
+    :arg string value: comma separated list of values for the single select
+        or multi-select box (optional, default '')
+    :arg string default-value: used to set the initial selection of the
+        single-select or multi-select box (optional, default '')
+    :arg string default-property-file: location of property file when default
+        value needs to come from a property file (optional, default '')
+    :arg string default-property-key: key for the default property file
+        (optional, default '')
+
+    Example::
+
+      properties:
+        - extended-choice:
+            name: FOO
+            description: A foo property
+            property-file: /home/foo/property.prop
+            property-key: key
+            quote-value: true
+            visible-items: 10
+            type: multi-select
+            value: foo,bar,select
+            default-value: foo
+            default-property-file: /home/property.prop
+            default-property-key: fookey
+    """
+    definition = XML.SubElement(xml_parent,
+                                'hudson.model.ParametersDefinitionProperty')
+    definitions = XML.SubElement(definition, 'parameterDefinitions')
+    extended = XML.SubElement(definitions, 'com.cwctravel.hudson.plugins.'
+                                           'extended__choice__parameter.'
+                                           'ExtendedChoiceParameterDefinition')
+    XML.SubElement(extended, 'name').text = data['name']
+    XML.SubElement(extended, 'description').text = data.get('description', '')
+    XML.SubElement(extended, 'quoteValue').text = str(data.get('quote-value',
+                                                      'false')).lower()
+    XML.SubElement(extended, 'visibleItemCount').text = data.get(
+        'visible-items', '5')
+    choice = data.get('type', 'single-select')
+    choicedict = {'single-select': 'PT_SINGLE_SELECT',
+                  'multi-select': 'PT_MULTI_SELECT',
+                  'radio': 'PT_RADIO',
+                  'checkbox': 'PT_CHECKBOX'}
+    if choice not in choicedict:
+        raise Exception("Type entered is not valid, must be one of: " +
+                        "single-select, multi-select, radio, or checkbox")
+    XML.SubElement(extended, 'type').text = choicedict[choice]
+    XML.SubElement(extended, 'value').text = data.get('value', '')
+    XML.SubElement(extended, 'propertyFile').text = data.get('property-file',
+                                                             '')
+    XML.SubElement(extended, 'propertyKey').text = data.get('property-key', '')
+    XML.SubElement(extended, 'defaultValue').text = data.get('default-value',
+                                                             '')
+    XML.SubElement(extended, 'defaultPropertyFile').text = data.get(
+        'default-property-file', '')
+    XML.SubElement(extended, 'defaultPropertyKey').text = data.get(
+        'default-property-key', '')
 
 
 class Properties(jenkins_jobs.modules.base.Base):

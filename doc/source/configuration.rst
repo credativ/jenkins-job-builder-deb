@@ -259,6 +259,8 @@ the generic macro ``add``.  Whenever you forget a parameter from a macro,
 it will not be expanded and left as is, which will most probably cause havoc in
 your Jenkins builds.
 
+.. _defaults:
+
 Defaults
 ^^^^^^^^
 
@@ -267,7 +269,7 @@ those values when the job is created, unless superseded by a value in
 the 'Job'_ definition.  If a set of Defaults is specified with the
 name ``global``, that will be used by all `Job`_ (and `Job Template`_)
 definitions unless they specify a different Default object with the
-``default`` attribute.  For example::
+``defaults`` attribute.  For example::
 
   - defaults:
       name: global

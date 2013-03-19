@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import jenkins_jobs.builder
+import jenkins_jobs.errors
 import argparse
 import ConfigParser
 import logging
@@ -20,7 +21,7 @@ def main():
                                       dest='command')
     parser_update = subparser.add_parser('update')
     parser_update.add_argument('path', help='Path to YAML file or directory')
-    parser_update.add_argument('name', help='name of job', nargs='?')
+    parser_update.add_argument('names', help='name(s) of job(s)', nargs='?')
     parser_test = subparser.add_parser('test')
     parser_test.add_argument('path', help='Path to YAML file or directory')
     parser_test.add_argument('-o', dest='output_dir',
@@ -52,13 +53,18 @@ def main():
         if os.path.isfile(localconf):
             conf = localconf
 
-    if not options.command == 'test':
+    if os.path.isfile(conf):
         logger.debug("Reading config from {0}".format(conf))
         conffp = open(conf, 'r')
         config = ConfigParser.ConfigParser()
         config.readfp(conffp)
-    else:
+    elif options.command == 'test':
+        logger.debug("Not reading config for test output generation")
         config = {}
+    else:
+        raise jenkins_jobs.errors.JenkinsJobsException(
+            "A valid configuration file is required when not run as a test")
+
     logger.debug("Config: {0}".format(config))
     builder = jenkins_jobs.builder.Builder(config.get('jenkins', 'url'),
                                            config.get('jenkins', 'user'),
@@ -76,8 +82,8 @@ def main():
         builder.delete_all_jobs()
     elif options.command == 'update':
         logger.info("Updating jobs in {0} ({1})".format(
-            options.path, options.name))
-        builder.update_job(options.path, options.name)
+            options.path, options.names))
+        builder.update_job(options.path, options.names)
     elif options.command == 'test':
         builder.update_job(options.path, options.name,
                            output_dir=options.output_dir)

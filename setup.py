@@ -34,7 +34,6 @@ setuptools.setup(
     include_package_data=True,
     cmdclass=setup.get_cmdclass(),
     install_requires=requires,
-    setup_requires=['setuptools_git>=0.4'],
     dependency_links=depend_links,
     zip_safe=False,
     classifiers=[
@@ -76,6 +75,7 @@ setuptools.setup(
             'authenticated-build=jenkins_jobs.modules.properties:'
             'authenticated_build',
             'authorization=jenkins_jobs.modules.properties:authorization',
+            'extended-choice=jenkins_jobs.modules.properties:extended_choice',
         ],
         'jenkins_jobs.parameters': [
             'string=jenkins_jobs.modules.parameters:string_param',
@@ -93,6 +93,7 @@ setuptools.setup(
         ],
         'jenkins_jobs.publishers': [
             'archive=jenkins_jobs.modules.publishers:archive',
+            'deploy=jenkins_jobs.modules.publishers:deploy',
             'trigger-parameterized-builds='
             'jenkins_jobs.modules.publishers:trigger_parameterized_builds',
             'trigger=jenkins_jobs.modules.publishers:trigger',
@@ -100,7 +101,10 @@ setuptools.setup(
             'ftp=jenkins_jobs.modules.publishers:ftp',
             'junit=jenkins_jobs.modules.publishers:junit',
             'xunit=jenkins_jobs.modules.publishers:xunit',
+            'groovy-postbuild=jenkins_jobs.modules.publishers:'
+            'groovy_postbuild',
             'violations=jenkins_jobs.modules.publishers:violations',
+            'checkstyle=jenkins_jobs.modules.publishers:checkstyle',
             'scp=jenkins_jobs.modules.publishers:scp',
             'pipeline=jenkins_jobs.modules.publishers:pipeline',
             'email=jenkins_jobs.modules.publishers:email',
@@ -112,6 +116,7 @@ setuptools.setup(
             'logparser=jenkins_jobs.modules.publishers:logparser',
             'copy-to-master=jenkins_jobs.modules.publishers:copy_to_master',
             'jira=jenkins_jobs.modules.publishers:jira',
+            'cifs=jenkins_jobs.modules.publishers:cifs',
         ],
         'jenkins_jobs.scm': [
             'git=jenkins_jobs.modules.scm:git',
@@ -121,6 +126,7 @@ setuptools.setup(
             'gerrit=jenkins_jobs.modules.triggers:gerrit',
             'pollscm=jenkins_jobs.modules.triggers:pollscm',
             'timed=jenkins_jobs.modules.triggers:timed',
+            'github=jenkins_jobs.modules.triggers:github',
         ],
         'jenkins_jobs.wrappers': [
             'timeout=jenkins_jobs.modules.wrappers:timeout',

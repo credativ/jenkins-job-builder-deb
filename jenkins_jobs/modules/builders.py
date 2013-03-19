@@ -1,4 +1,4 @@
-# Copyright 2012 Hewlett-Packard Development Company, L.P.
+# opyright 2012 Hewlett-Packard Development Company, L.P.
 # Copyright 2012 Varnish Software AS
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -70,6 +70,36 @@ def copyartifact(parser, xml_parent, data):
     :arg str project: Project to copy from
     :arg str filter: what files to copy
     :arg str target: Target base directory for copy, blank means use workspace
+    :arg bool flatten: Flatten directories (default: false)
+    :arg str which-build: which build to get artifacts from
+        (optional, default last-successful)
+    :arg str build-number: specifies the build number to get when
+        when specific-build is specified as which-build
+    :arg str permalink: specifies the permalink to get when
+        permalink is specified as which-build
+    :arg bool stable: specifies to get only last stable build when
+        last-successful is specified as which-build
+    :arg bool fallback-to-last-successful: specifies to fallback to
+        last successful build when upstream-build is specified as which-build
+    :arg string param: specifies to use a build parameter to get the build when
+        build-param is specified as which-build
+
+    :which-build values:
+        :last-successful:
+        :specific-build:
+        :last-saved:
+        :upstream-build:
+        :permalink:
+        :workspace-latest:
+        :build-param:
+
+    :permalink values:
+        :last:
+        :last-stable:
+        :last-successful:
+        :last-failed:
+        :last-unstable:
+        :last-unsuccessful:
 
 
     Example::
@@ -78,12 +108,57 @@ def copyartifact(parser, xml_parent, data):
         - copyartifact:
             project: foo
             filter: *.tar.gz
+            target: /home/foo
+            which-build: specific-build
+            build-number: 123
+            flatten: true
 
     """
     t = XML.SubElement(xml_parent, 'hudson.plugins.copyartifact.CopyArtifact')
     XML.SubElement(t, 'projectName').text = data["project"]
     XML.SubElement(t, 'filter').text = data.get("filter", "")
     XML.SubElement(t, 'target').text = data.get("target", "")
+    flatten = data.get("flatten", False)
+    XML.SubElement(t, 'flatten').text = str(flatten).lower()
+    select = data.get('which-build', 'last-successful')
+    selectdict = {'last-successful': 'StatusBuildSelector',
+                  'specific-build': 'SpecificBuildSelector',
+                  'last-saved': 'SavedBuildSelector',
+                  'upstream-build': 'TriggeredBuildSelector',
+                  'permalink': 'PermalinkBuildSelector',
+                  'workspace-latest': 'WorkspaceSelector',
+                  'build-param': 'ParameterizedBuildSelector'}
+    if select not in selectdict:
+        raise Exception("which-build entered is not valid must be one of: " +
+                        "last-successful, specific-build, last-saved, " +
+                        "upstream-build, permalink, workspace-latest, " +
+                        " or build-param")
+    permalink = data.get('permalink', 'last')
+    permalinkdict = {'last': 'lastBuild',
+                     'last-stable': 'lastStableBuild',
+                     'last-successful': 'lastSuccessfulBuild',
+                     'last-failed': 'lastFailedBuild',
+                     'last-unstable': 'lastUnstableBuild',
+                     'last-unsuccessful': 'lastUnsuccessfulBuild'}
+    if permalink not in permalinkdict:
+        raise Exception("permalink entered is not valid must be one of: " +
+                        "last, last-stable, last-successful, last-failed, " +
+                        "last-unstable, or last-unsuccessful")
+    selector = XML.SubElement(t, 'selector',
+                                 {'class': 'hudson.plugins.copyartifact.' +
+                                 selectdict[select]})
+    if select == 'specific-build':
+        XML.SubElement(selector, 'buildNumber').text = data['build-number']
+    if select == 'last-successful':
+        XML.SubElement(selector, 'stable').text = str(
+            data.get('stable', 'false')).lower()
+    if select == 'upstream-build':
+        XML.SubElement(selector, 'fallbackToLastSuccessful').text = str(
+            data.get('fallback-to-last-successful', 'false')).lower()
+    if select == 'permalink':
+        XML.SubElement(selector, 'id').text = permalinkdict[permalink]
+    if select == 'build-param':
+        XML.SubElement(selector, 'parameterName').text = data['param']
 
 
 def ant(parser, xml_parent, data):
@@ -119,6 +194,8 @@ def ant(parser, xml_parent, data):
     :arg list properties: Passed to ant script using -Dkey=value (optional)
     :arg str ant-name: the name of the ant installation,
         defaults to 'default' (optional)
+    :arg str java-opts: java options for ant, can have multiples,
+        must be in quotes (optional)
 
 
     Example specifying the build file too and several targets::
@@ -130,6 +207,9 @@ def ant(parser, xml_parent, data):
              properties:
                 builddir: "/tmp/"
                 failonerror: true
+             java-opts:
+                - "-ea"
+                - "-Xmx512m"
              ant-name: "Standard Ant"
 
     """
@@ -152,6 +232,13 @@ def ant(parser, xml_parent, data):
                 prop_string += "%s=%s\n" % (prop, val)
             prop_element = XML.SubElement(ant, 'properties')
             prop_element.text = prop_string
+        if setting == 'java-opts':
+            javaopts = data['java-opts']
+            jopt_string = ''
+            for jopt in javaopts:
+                jopt_string += jopt + "\n"
+            jopt_element = XML.SubElement(ant, 'antOpts')
+            jopt_element.text = jopt_string
 
     XML.SubElement(ant, 'antName').text = data.get('ant-name', 'default')
 
@@ -166,6 +253,9 @@ def trigger_builds(parser, xml_parent, data):
     :arg str project: the Jenkins project to trigger
     :arg str predefined-parameters:
       key/value pairs to be passed to the job (optional)
+    :arg bool current-parameters: Whether to include the
+      parameters passed to the current build to the
+      triggered job.
     :arg bool block: whether to wait for the triggered jobs
       to finish or not (default false)
 
@@ -271,10 +361,10 @@ def inject(parser, xml_parent, data):
     """
     eib = XML.SubElement(xml_parent, 'EnvInjectBuilder')
     info = XML.SubElement(eib, 'info')
-    propfile = data.get('properties-file', '')
-    XML.SubElement(info, 'propertiesFilePath').text = propfile
-    propcontent = data.get('properties-content', '')
-    XML.SubElement(info, 'propertiesContent').text = propcontent
+    jenkins_jobs.modules.base.add_nonblank_xml_subelement(
+        info, 'propertiesFilePath', data.get('properties-file'))
+    jenkins_jobs.modules.base.add_nonblank_xml_subelement(
+        info, 'propertiesContent', data.get('properties-content'))
 
 
 def artifact_resolver(parser, xml_parent, data):
