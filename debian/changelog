@@ -1,3 +1,10 @@
+jenkins-job-builder (0.4.0-1credativ1) UNRELEASED; urgency=low
+
+  * Remove obsolete patches
+   
+
+ -- Patrick Schoenfeld <psc@mona>  Tue, 19 Mar 2013 10:35:17 +0100
+
 jenkins-job-builder (0.4.0-1) unstable; urgency=low
 
   * New upstream release
