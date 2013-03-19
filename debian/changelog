@@ -1,9 +1,10 @@
-jenkins-job-builder (0.4.0-1credativ1) UNRELEASED; urgency=low
+jenkins-job-builder (0.4.0-1credativ1) unstable; urgency=low
 
   * Remove obsolete patches
-   
+  * Add support for ArtifactDeployerPublisher
+  * Allow text axis in project matrix
 
- -- Patrick Schoenfeld <psc@mona>  Tue, 19 Mar 2013 10:35:17 +0100
+ -- Patrick Schoenfeld <patrick.schoenfeld@credativ.de>  Tue, 19 Mar 2013 10:46:38 +0100
 
 jenkins-job-builder (0.4.0-1) unstable; urgency=low
 
