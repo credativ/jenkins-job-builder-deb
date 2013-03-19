@@ -1,0 +1,13 @@
+*.egg
+*.egg-info
+*.pyc
+.test
+.tox
+AUTHORS
+build/*
+ChangeLog
+config
+dist/*
+doc/build/*
+doc/source/*
+jenkins_jobs/versioninfo
