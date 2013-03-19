@@ -24,7 +24,7 @@ override_dh_install:
 	dh_link /usr/share/jenkins-job-builder/jenkins-jobs /usr/bin/jenkins-jobs
 
 override_dh_installchangelogs:
-	dh_installchangelogs ChangeLog
+#	dh_installchangelogs ChangeLog
 
 get-orig-source:
 	uscan --noconf --force-download --rename --repack --destdir=.
