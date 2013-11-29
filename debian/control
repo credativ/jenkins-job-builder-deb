@@ -19,6 +19,7 @@ Depends: libjs-jquery,
  libjs-underscore,
  python-jenkins,
  python-yaml,
+ python-pkg-resources,
  ${misc:Depends},
  ${python:Depends},
  ${sphinxdoc:Depends}
